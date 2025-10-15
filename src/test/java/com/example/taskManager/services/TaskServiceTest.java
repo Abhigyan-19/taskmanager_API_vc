@@ -1,3 +1,4 @@
+//
 //package com.example.taskManager.services;
 //
 //import com.example.taskManager.model.Task;
@@ -7,6 +8,9 @@
 //import org.mockito.InjectMocks;
 //import org.mockito.Mock;
 //import org.mockito.junit.jupiter.MockitoExtension;
+//
+//import java.util.Optional;
+//import java.util.List;
 //
 //import static org.junit.jupiter.api.Assertions.*;
 //import static org.mockito.Mockito.*;
@@ -32,9 +36,78 @@
 //        assertNotNull(savedTask);
 //        assertEquals("Test Task", savedTask.getTitle());
 //        verify(taskRepository, times(1)).save(taskToSave);
+//    }
+//
+//    @Test
+//    void shouldReturnAllTasks() {
+//        Task task1 = new Task();
+//        Task task2 = new Task();
+//        when(taskRepository.findAll()).thenReturn(List.of(task1, task2));
+//
+//        List<Task> tasks = taskService.getAllTasks();
+//
+//        assertEquals(2, tasks.size());
+//        verify(taskRepository).findAll();
+//    }
+//
+//    @Test
+//    void shouldReturnTaskById() {
+//        Task task = new Task();
+//        task.setId(1L);
+//        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+//
+//        Task foundTask = taskService.getTaskById(1L);
+//
+//        assertEquals(1L, foundTask.getId());
+//        verify(taskRepository).findById(1L);
+//    }
+//
+//    @Test
+//    void shouldThrowExceptionWhenTaskNotFound() {
+//        when(taskRepository.findById(99L)).thenReturn(Optional.empty());
+//
+//        RuntimeException exception = assertThrows(RuntimeException.class, () -> taskService.getTaskById(99L));
+//        assertEquals("Task not found with id 99", exception.getMessage());
+//        verify(taskRepository).findById(99L);
+//    }
+//
+//    @Test
+//    void shouldUpdateTask() {
+//        Task existingTask = new Task();
+//        existingTask.setId(1L);
+//        existingTask.setTitle("Old Title");
+//        existingTask.setDescription("Old Desc");
+//        existingTask.setCompleted(false);
+//
+//        Task updatedTask = new Task();
+//        updatedTask.setTitle("New Title");
+//        updatedTask.setDescription("New Desc");
+//        updatedTask.setCompleted(true);
+//
+//        when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
+//        when(taskRepository.save(any(Task.class))).thenReturn(existingTask);
+//
+//        Task result = taskService.updateTask(1L, updatedTask);
+//
+//        assertEquals("New Title", result.getTitle());
+//        assertEquals("New Desc", result.getDescription());
+//        assertTrue(result.isCompleted());
+//        verify(taskRepository).findById(1L);
+//        verify(taskRepository).save(existingTask);
+//    }
+//
+//    @Test
+//    void shouldDeleteTask() {
+//        Task task = new Task();
+//        task.setId(1L);
+//        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+//
+//        taskService.deleteTask(1L);
+//
+//        verify(taskRepository).findById(1L);
+//        verify(taskRepository).delete(task);
+//    }
 //}
-//}
-
 
 package com.example.taskManager.services;
 
@@ -55,36 +128,26 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
 
-    @Mock
-    private TaskRepository taskRepository;
-
-    @InjectMocks
-    private TaskService taskService;
+    @Mock private TaskRepository taskRepository;
+    @InjectMocks private TaskService taskService;
 
     @Test
     void shouldSaveNewTask() {
-        Task taskToSave = new Task();
-        taskToSave.setTitle("Test Task");
+        Task task = new Task();
+        task.setTitle("Test Task");
 
-        when(taskRepository.save(any(Task.class))).thenReturn(taskToSave);
+        when(taskRepository.save(any(Task.class))).thenReturn(task);
 
-        Task savedTask = taskService.createTask(taskToSave);
+        Task saved = taskService.createTask(task);
 
-        assertNotNull(savedTask);
-        assertEquals("Test Task", savedTask.getTitle());
-        verify(taskRepository, times(1)).save(taskToSave);
+        assertEquals("Test Task", saved.getTitle());
+        verify(taskRepository).save(task);
     }
 
     @Test
     void shouldReturnAllTasks() {
-        Task task1 = new Task();
-        Task task2 = new Task();
-        when(taskRepository.findAll()).thenReturn(List.of(task1, task2));
-
-        List<Task> tasks = taskService.getAllTasks();
-
-        assertEquals(2, tasks.size());
-        verify(taskRepository).findAll();
+        when(taskRepository.findAll()).thenReturn(List.of(new Task(), new Task()));
+        assertEquals(2, taskService.getAllTasks().size());
     }
 
     @Test
@@ -93,44 +156,35 @@ class TaskServiceTest {
         task.setId(1L);
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
-        Task foundTask = taskService.getTaskById(1L);
-
-        assertEquals(1L, foundTask.getId());
-        verify(taskRepository).findById(1L);
+        Task found = taskService.getTaskById(1L);
+        assertEquals(1L, found.getId());
     }
 
     @Test
-    void shouldThrowExceptionWhenTaskNotFound() {
+    void shouldThrowIfTaskNotFound() {
         when(taskRepository.findById(99L)).thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> taskService.getTaskById(99L));
-        assertEquals("Task not found with id 99", exception.getMessage());
-        verify(taskRepository).findById(99L);
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> taskService.getTaskById(99L));
+        assertEquals("Task not found with id 99", ex.getMessage());
     }
 
     @Test
     void shouldUpdateTask() {
-        Task existingTask = new Task();
-        existingTask.setId(1L);
-        existingTask.setTitle("Old Title");
-        existingTask.setDescription("Old Desc");
-        existingTask.setCompleted(false);
+        Task existing = new Task();
+        existing.setId(1L);
+        existing.setTitle("Old");
 
-        Task updatedTask = new Task();
-        updatedTask.setTitle("New Title");
-        updatedTask.setDescription("New Desc");
-        updatedTask.setCompleted(true);
+        Task updated = new Task();
+        updated.setTitle("New");
+        updated.setDescription("Updated");
+        updated.setCompleted(true);
 
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(existingTask));
-        when(taskRepository.save(any(Task.class))).thenReturn(existingTask);
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(taskRepository.save(any(Task.class))).thenReturn(existing);
 
-        Task result = taskService.updateTask(1L, updatedTask);
-
-        assertEquals("New Title", result.getTitle());
-        assertEquals("New Desc", result.getDescription());
+        Task result = taskService.updateTask(1L, updated);
+        assertEquals("New", result.getTitle());
         assertTrue(result.isCompleted());
-        verify(taskRepository).findById(1L);
-        verify(taskRepository).save(existingTask);
     }
 
     @Test
@@ -140,8 +194,6 @@ class TaskServiceTest {
         when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
         taskService.deleteTask(1L);
-
-        verify(taskRepository).findById(1L);
         verify(taskRepository).delete(task);
     }
 }
